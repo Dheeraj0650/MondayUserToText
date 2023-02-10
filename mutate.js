@@ -79,6 +79,7 @@ async function mutate(boardID, itemID, column, text) {
         myItemId: itemID,
         myColumnValues: `{\"${column}\" : \"${text}\"}`
     });
+
     const query = "mutation ($myBoardId:Int!, $myItemId:Int!, $myColumnValues:JSON!) { change_multiple_column_values(item_id:$myItemId, board_id:$myBoardId, column_values: $myColumnValues) { id } }";
 
     options.body = JSON.stringify({

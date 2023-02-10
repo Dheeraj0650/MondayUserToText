@@ -3,10 +3,11 @@
 //     updateBoardNames
 // } from './mutate';
 
-import 'dotenv/config'
-import express from 'express';
-import bodyParser from 'body-parser';
-import fetch from 'node-fetch';
+require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const serverless = require('serverless-http');
 
 const PORT = process.env.PORT || 8080;
 const app = express().use(bodyParser.json());
@@ -16,6 +17,8 @@ const app = express().use(bodyParser.json());
 app.listen(PORT, () => {
     console.log(`listening on port: ${PORT}`);
 })
+
+module.exports.hello = serverless(app);
 
 app.get('/', (req, res) => {
     return res.end('hello');
@@ -33,7 +36,7 @@ app.post("/", (req, res) => {
         columnID = req.body.event.columnId;
     }
     console.log(`Request from board ${boardID}...\n`);
-    // console.log(JSON.stringify(req.body, 0, 2));
+    console.log(JSON.stringify(req.body, 0, 2));
 
     // after getting which board and column the request came from replace those names with text
     replaceNamesOfBoard(boardID, columnID);
@@ -47,15 +50,12 @@ let options = {
     method: 'post',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': process.env.MONDAY_KEY
+        'Authorization': process.env.API_KEY
     },
     body: JSON.stringify({
         query: undefined
     })
 };
-
-
-
 
 
 async function replaceNamesOfBoard(boardID, columnID) {
@@ -141,7 +141,7 @@ async function replaceNamesOfBoard(boardID, columnID) {
 
 
 
-    console.log("completed array of updated items: ", updatedItems);
+    // console.log("completed array of updated items: ", updatedItems);
 }
 
 
@@ -233,20 +233,34 @@ async function getBoardItemPeople(boardID, columnID) {
  * @param {what to mutate the column to} text 
  */
 async function mutate(boardID, itemID, column, text) {
-    const variables = JSON.stringify({
-        myBoardId: boardID,
-        myItemId: itemID,
-        myColumnValues: `{\"${column}\" : \"${text}\"}`
-    });
-    const query = "mutation ($myBoardId:Int!, $myItemId:Int!, $myColumnValues:JSON!) { change_multiple_column_values(item_id:$myItemId, board_id:$myBoardId, column_values: $myColumnValues) { id } }";
 
+    // const variables = JSON.stringify({
+    //     myBoardId: boardID,
+    //     myItemId: itemID,
+    //     myColumnValues: `{\"${column}\" : \"${text}\"}`
+    // });
+
+    var value1 = JSON.stringify(`{\"${column}\": \"${text}\"}`)
+  
+    const query = ` mutation {change_multiple_column_values (board_id: 1216072299, item_id: ${itemID}, column_values:${value1} ) { id } }`
+
+    // const query = "mutation ($myBoardId:Int!, $myItemId:Int!, $myColumnValues:JSON!) { change_multiple_column_values(item_id:$myItemId, board_id:$myBoardId, column_values: $myColumnValues) { id } }";
+    
     options.body = JSON.stringify({
         query: query,
-        variables: variables
     })
-    // console.log(options);
 
-    const response = await fetch("https://api.monday.com/v2", options);
+    const response = await fetch("https://api.monday.com/v2",  {
+        method: 'post',
+        headers: {
+              'Content-Type': 'application/json',
+              'Authorization' : process.env.API_KEY
+        },
+        body: JSON.stringify({
+          'query' : query
+        })
+    });
+
     const json = await response.json();
-    // console.log(json);
+    console.log(json);
 }
