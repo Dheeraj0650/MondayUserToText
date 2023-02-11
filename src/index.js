@@ -6,26 +6,20 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const serverless = require('serverless-http');
+const router = express.Router();
 
 const PORT = process.env.PORT || 8080;
 const app = express().use(bodyParser.json());
 
 
-
-app.listen(PORT, () => {
-    console.log(`listening on port: ${PORT}`);
-})
-
-module.exports.hello = serverless(app);
-
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
     return res.end('hello');
 });
 
 // monday webhook will make a post request (requires the exact request body to be the response)
-app.post("/", (req, res) => {
+router.post("/", (req, res) => {
     let boardID = "no board";
     let columnTitle;
     let columnID;
@@ -43,6 +37,16 @@ app.post("/", (req, res) => {
 
     res.status(200).send(req.body);
 })
+
+
+app.use(`/.netlify/functions/index`, router);
+
+app.listen(PORT, () => {
+    console.log(`listening on port: ${PORT}`);
+})
+
+module.exports = app;
+module.exports.handler = serverless(app);
 
 
 // used for accessing monday.com (autorization will change here per user)
@@ -261,6 +265,7 @@ async function mutate(boardID, itemID, column, text) {
         })
     });
 
+    
     const json = await response.json();
     console.log(json);
 }
