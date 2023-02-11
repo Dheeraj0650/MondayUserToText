@@ -14,12 +14,26 @@ const PORT = process.env.PORT || 8080;
 const app = express().use(bodyParser.json());
 
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+    try {
+        const res = await axios.get('https://v2.jokeapi.dev/joke/Any?type=single', {timeout:5000})
+        console.log(res)
+        return {
+            statusCode: 200,
+            body: JSON.stringify(res)
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+            statusCode: 400,
+            body: JSON.stringify(e)
+        }
+    }
     return res.end('hello');
 });
 
 // monday webhook will make a post request (requires the exact request body to be the response)
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     let boardID = "no board";
     let columnTitle;
     let columnID;
