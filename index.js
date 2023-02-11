@@ -6,34 +6,24 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-// const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const serverless = require('serverless-http');
-const router = express.Router();
 
 const PORT = process.env.PORT || 8080;
 const app = express().use(bodyParser.json());
 
+module.exports.hello = serverless(app);
 
-router.get('/', async (req, res) => {
-    try {
-        const res = await axios.get('https://v2.jokeapi.dev/joke/Any?type=single', {timeout:5000})
-        console.log(res)
-        return {
-            statusCode: 200,
-            body: JSON.stringify(res)
-        }
-      } catch (e) {
-        console.log(e)
-        return {
-            statusCode: 400,
-            body: JSON.stringify(e)
-        }
-    }
+app.get('/', (req, res) => {
     return res.end('hello');
 });
 
+app.listen(PORT, () => {
+    console.log(`Example app listening on port ${PORT}`)
+  });
+
 // monday webhook will make a post request (requires the exact request body to be the response)
-router.post("/", async (req, res) => {
+app.post("/", (req, res) => {
     let boardID = "no board";
     let columnTitle;
     let columnID;
@@ -51,16 +41,6 @@ router.post("/", async (req, res) => {
 
     res.status(200).send(req.body);
 })
-
-
-app.use(`/.netlify/functions/index`, router);
-
-app.listen(PORT, () => {
-    console.log(`listening on port: ${PORT}`);
-})
-
-module.exports = app;
-module.exports.handler = serverless(app);
 
 
 // used for accessing monday.com (autorization will change here per user)
@@ -183,6 +163,7 @@ async function getBoardItemPeople(boardID, columnID) {
         query: boardquery
     })
 
+
     const boardResponse = await fetch("https://api.monday.com/v2", options);
     const boardJSON = await boardResponse.json();
     // console.log(JSON.stringify(boardJSON, null, 2))
@@ -194,7 +175,7 @@ async function getBoardItemPeople(boardID, columnID) {
     }
 
     if (items) {
-        // console.log(items);
+        console.log(items);
         for (let item of items) {
             // console.log(item);
             const idRE = /[0-9]{7,}/;
